@@ -1,11 +1,13 @@
-FROM python:3.11
+FROM python:3.11-slim
 
-# Install Node.js (>=18) and required tooling
+# Install Node.js 20 from nodesource (minimal, no webpack/babel/eslint bloat)
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends nodejs npm \
+  && apt-get install -y --no-install-recommends curl ca-certificates \
+  && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+  && apt-get install -y --no-install-recommends nodejs \
   && rm -rf /var/lib/apt/lists/*
 
-# Copy `uv` from the official image
+# Copy uv from the official image
 COPY --from=ghcr.io/astral-sh/uv:0.9.26 /uv /uvx /bin/
 
 WORKDIR /app
@@ -26,5 +28,4 @@ COPY . .
 
 EXPOSE 3000 5001
 
-# Start frontend and backend together (development mode)
 CMD ["npm", "run", "dev"]
