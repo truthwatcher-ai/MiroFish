@@ -14,7 +14,7 @@ from ..config import Config
 
 class LLMClient:
     """Lightweight LLM client."""
-    
+
     def __init__(
         self,
         api_key: Optional[str] = None,
@@ -24,15 +24,15 @@ class LLMClient:
         self.api_key = api_key or Config.LLM_API_KEY
         self.base_url = base_url or Config.LLM_BASE_URL
         self.model = model or Config.LLM_MODEL_NAME
-        
+
         if not self.api_key:
             raise ValueError("LLM_API_KEY is not configured")
-        
+
         self.client = OpenAI(
             api_key=self.api_key,
             base_url=self.base_url
         )
-    
+
     def chat(
         self,
         messages: List[Dict[str, str]],
@@ -55,19 +55,28 @@ class LLMClient:
         kwargs = {
             "model": self.model,
             "messages": messages,
-            "temperature": temperature,
             "max_completion_tokens": max_tokens,
         }
-        
+
         if response_format:
             kwargs["response_format"] = response_format
-        
-        response = self.client.chat.completions.create(**kwargs)
+
+        # Try with temperature first, retry without if model doesn't support it
+        try:
+            kwargs["temperature"] = temperature
+            response = self.client.chat.completions.create(**kwargs)
+        except Exception as e:
+            if "temperature" in str(e):
+                del kwargs["temperature"]
+                response = self.client.chat.completions.create(**kwargs)
+            else:
+                raise
+
         content = response.choices[0].message.content
         # Some models (e.g. MiniMax M2.5) include <think>...</think> content that should be stripped
         content = re.sub(r'<think>[\s\S]*?</think>', '', content).strip()
         return content
-    
+
     def chat_json(
         self,
         messages: List[Dict[str, str]],
@@ -101,4 +110,3 @@ class LLMClient:
             return json.loads(cleaned_response)
         except json.JSONDecodeError:
             raise ValueError(f"Invalid JSON returned by LLM: {cleaned_response}")
-
