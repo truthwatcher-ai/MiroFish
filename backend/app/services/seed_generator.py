@@ -2,7 +2,7 @@
 Seed data generator service.
 
 Uses gpt-4.1-mini to analyze topics into research categories,
-then Perplexity Sonar to generate web-grounded research files.
+then OpenAI Responses API with web_search to generate research files.
 """
 
 import os
@@ -10,7 +10,6 @@ import json
 import uuid
 import threading
 from typing import Optional
-from openai import OpenAI
 
 from ..config import Config
 from ..utils.llm_client import LLMClient
@@ -45,22 +44,13 @@ class SeedTask:
 
 
 class SeedGenerator:
-    """Generates research-backed seed data using Perplexity Sonar."""
+    """Generates research-backed seed data using OpenAI Responses API with web search."""
 
     # In-memory task store
     _tasks: dict[str, SeedTask] = {}
 
     def __init__(self):
         self.llm = LLMClient()
-
-        if not Config.PERPLEXITY_API_KEY:
-            raise ValueError('PERPLEXITY_API_KEY is not configured')
-
-        self.perplexity = OpenAI(
-            api_key=Config.PERPLEXITY_API_KEY,
-            base_url='https://api.perplexity.ai',
-        )
-
         self.output_dir = os.path.join(Config.UPLOAD_FOLDER, 'seed')
         os.makedirs(self.output_dir, exist_ok=True)
 
@@ -83,8 +73,8 @@ class SeedGenerator:
         return categories
 
     def generate_file(self, prompt: str, category: dict, depth: str) -> str:
-        """Use Perplexity Sonar to generate one seed file with live web research."""
-        model = Config.PERPLEXITY_MODEL_DEEP if depth == 'thorough' else Config.PERPLEXITY_MODEL
+        """Use OpenAI Responses API with web_search to generate one seed file."""
+        model = Config.SEED_MODEL_THOROUGH if depth == 'thorough' else Config.SEED_MODEL_QUICK
         system_prompt = get_prompt('seed_generate_prompt')
 
         user_message = (
@@ -97,15 +87,16 @@ class SeedGenerator:
 
         logger.info(f'Generating seed file: {category["name"]} (model={model})')
 
-        response = self.perplexity.chat.completions.create(
+        response = self.llm.client.responses.create(
             model=model,
-            messages=[
+            tools=[{'type': 'web_search'}],
+            input=[
                 {'role': 'system', 'content': system_prompt},
                 {'role': 'user', 'content': user_message},
             ],
         )
 
-        content = response.choices[0].message.content
+        content = response.output_text
         logger.info(f'Generated {len(content)} chars for {category["name"]}')
         return content
 
@@ -138,7 +129,7 @@ class SeedGenerator:
                 task.current_file = cat_name
                 task.progress = int((i / total) * 100)
 
-                # Generate content via Perplexity
+                # Generate content via OpenAI web search
                 content = self.generate_file(prompt, category, depth)
 
                 # Save to disk
