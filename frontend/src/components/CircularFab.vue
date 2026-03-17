@@ -134,11 +134,12 @@ const handleResearch = () => {
   z-index: -1;
 }
 
-/* Ring segment menu */
+/* Ring segment menu — arc center (100,100) in viewBox maps to pixel 135/180.
+   Offset so that pixel aligns with FAB center (24px into the 48px button). */
 .ring-menu {
   position: absolute;
-  bottom: -4px;
-  right: -4px;
+  bottom: -21px;
+  right: -21px;
   width: 180px;
   height: 180px;
   z-index: 1;
@@ -146,15 +147,18 @@ const handleResearch = () => {
 }
 
 .ring-segment {
-  fill: #333;
+  fill: rgba(0, 0, 0, 0.7);
+  stroke: rgba(255, 255, 255, 0.15);
+  stroke-width: 1;
   cursor: pointer;
   pointer-events: all;
-  transition: fill 0.15s ease;
+  transition: fill 0.15s ease, stroke 0.15s ease;
 }
 
 .ring-segment.hovered,
 .ring-segment:hover {
   fill: #FF4500;
+  stroke: #FF4500;
 }
 
 .ring-label {
@@ -181,25 +185,26 @@ const handleResearch = () => {
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  background: #000;
+  background: rgba(0, 0, 0, 0.85);
   color: #fff;
-  border: none;
+  border: 2px solid rgba(255, 255, 255, 0.15);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-  transition: background 0.2s ease;
+  transition: border-color 0.2s ease, background 0.2s ease;
   user-select: none;
   z-index: 2;
+  outline: none;
 }
 
 .fab-main:hover {
-  background: #1a1a1a;
+  border-color: #FF4500;
 }
 
 .fab-main.open {
-  background: #000;
+  border-color: #FF4500;
 }
 
 /* FAB text */
@@ -236,12 +241,13 @@ const handleResearch = () => {
 /* Progress ring */
 .progress-ring {
   position: absolute;
-  top: -4px;
-  left: -4px;
-  width: 56px;
-  height: 56px;
+  top: -6px;
+  left: -6px;
+  width: 60px;
+  height: 60px;
   transform: rotate(-90deg);
   pointer-events: none;
+  aspect-ratio: 1;
 }
 
 .progress-ring-bg {
@@ -262,24 +268,26 @@ const handleResearch = () => {
 /* Done ring */
 .done-ring {
   position: absolute;
-  top: -4px;
-  left: -4px;
-  width: 56px;
-  height: 56px;
+  top: -6px;
+  left: -6px;
+  width: 60px;
+  height: 60px;
   pointer-events: none;
+  aspect-ratio: 1;
 }
 
 /* Pulse animation when generating */
 .fab-main.has-progress {
+  border-color: #FF4500;
   animation: fab-pulse 2s ease-in-out infinite;
 }
 
 @keyframes fab-pulse {
   0%, 100% {
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    border-color: #FF4500;
   }
   50% {
-    box-shadow: 0 2px 16px rgba(255, 69, 0, 0.4);
+    border-color: rgba(255, 69, 0, 0.3);
   }
 }
 </style>

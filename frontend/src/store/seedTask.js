@@ -28,7 +28,8 @@ export function startSeedTask(taskId, prompt, categories, depth) {
 }
 
 export function updateSeedProgress(data) {
-  state.status = data.status;
+  // Backend returns "running", normalize to "generating" for frontend
+  state.status = data.status === 'running' ? 'generating' : data.status;
   state.progress = data.progress;
   state.currentFile = data.current_file || '';
   state.completedFiles = data.completed_files || [];
