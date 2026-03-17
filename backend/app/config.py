@@ -39,10 +39,9 @@ class Config:
     # Language configuration ('en' for English, 'ms' for Bahasa Melayu).
     OUTPUT_LANGUAGE = os.environ.get('OUTPUT_LANGUAGE', 'en')
 
-    # Perplexity API (for seed data generation with web search)
-    PERPLEXITY_API_KEY = os.environ.get('PERPLEXITY_API_KEY')
-    PERPLEXITY_MODEL = os.environ.get('PERPLEXITY_MODEL', 'sonar-pro')
-    PERPLEXITY_MODEL_DEEP = os.environ.get('PERPLEXITY_MODEL_DEEP', 'sonar-deep-research')
+    # Seed data generation (uses OpenAI Responses API with web_search tool)
+    SEED_MODEL_QUICK = os.environ.get('SEED_MODEL_QUICK', 'gpt-5-mini')
+    SEED_MODEL_THOROUGH = os.environ.get('SEED_MODEL_THOROUGH', 'gpt-5')
 
     # File upload settings.
     MAX_CONTENT_LENGTH = 50 * 1024 * 1024  # 50MB
