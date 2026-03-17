@@ -223,18 +223,19 @@
       :prompt="formData.simulationRequirement"
       :categories="seedCategories"
       @files-ready="handleSeedFilesReady"
-      @close="showSeedModal = false"
+      @close="handleSeedModalClose"
     />
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import HistoryDatabase from '../components/HistoryDatabase.vue'
 import SeedGeneratorModal from '../components/SeedGeneratorModal.vue'
 import { analyzeTopicAPI, getSeedFileAPI } from '../api/seed.js'
 import { t, setLocale, getLocale } from '../i18n/index.js'
+import { seedTaskState } from '../store/seedTask.js'
 
 const router = useRouter()
 
@@ -376,6 +377,72 @@ const handleSeedFilesReady = async (seedFiles) => {
     loading.value = false
   }
 }
+
+// Handle seed modal close — reset both local and store flags
+const handleSeedModalClose = () => {
+  showSeedModal.value = false
+  seedTaskState.showModal = false
+}
+
+// Watch for CircularFab requesting seed modal open via store flag
+watch(
+  () => seedTaskState.showModal,
+  async (shouldShow) => {
+    if (shouldShow) {
+      seedTaskState.showModal = false  // Reset the flag immediately
+
+      // If store already has an active/completed task, just show the modal
+      if (seedTaskState.active || seedTaskState.status === 'completed') {
+        showSeedModal.value = true
+        return
+      }
+
+      // If we have categories from a previous analyze call, reuse them
+      if (seedCategories.value.length > 0) {
+        showSeedModal.value = true
+        return
+      }
+
+      // If there's a prompt, analyze the topic first
+      if (formData.value.simulationRequirement.trim()) {
+        loading.value = true
+        try {
+          const res = await analyzeTopicAPI(formData.value.simulationRequirement)
+          seedCategories.value = res.categories || []
+          showSeedModal.value = true
+        } catch (err) {
+          error.value = err.message || 'Failed to analyze topic'
+          console.error('Topic analysis failed:', err)
+        } finally {
+          loading.value = false
+        }
+        return
+      }
+
+      // No prompt entered yet — just open the modal with whatever we have
+      showSeedModal.value = true
+    }
+  }
+)
+
+// Watch for completed background seed task and auto-populate upload zone
+watch(
+  () => seedTaskState.status,
+  async (status) => {
+    if (status === 'completed' && seedTaskState.completedFiles.length > 0 && files.value.length === 0) {
+      try {
+        for (const sf of seedTaskState.completedFiles) {
+          const res = await getSeedFileAPI(seedTaskState.taskId, sf.name)
+          const blob = new Blob([res.content], { type: 'text/markdown' })
+          const file = new File([blob], sf.name, { type: 'text/markdown' })
+          files.value.push(file)
+        }
+      } catch (err) {
+        console.error('Failed to auto-populate seed files:', err)
+      }
+    }
+  }
+)
 </script>
 
 <style scoped>
