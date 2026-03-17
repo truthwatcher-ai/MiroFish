@@ -6,7 +6,6 @@ then OpenAI Responses API with web_search to generate research files.
 """
 
 import os
-import json
 import uuid
 import threading
 from typing import Optional

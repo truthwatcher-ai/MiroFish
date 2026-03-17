@@ -244,8 +244,9 @@ const startGeneration = async () => {
 
   if (selectedCategories.length === 0) return;
 
-  // Reset store so template immediately shows progress phase
-  resetSeedTask();
+  // Set analyzing status so phase stays in 'progress' during API call
+  seedTaskState.status = 'analyzing';
+  seedTaskState.error = null;
 
   try {
     const res = await generateSeedAPI(
